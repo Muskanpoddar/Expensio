@@ -1,4 +1,4 @@
-package com.codingliquids.budgetappstarting
+package com.example.muskan_poddar
 
 import io.flutter.embedding.android.FlutterActivity
 

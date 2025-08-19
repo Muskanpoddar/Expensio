@@ -4,7 +4,7 @@ project(budget_app_starting LANGUAGES CXX)
 
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
-set(BINARY_NAME "budget_app_starting")
+set(BINARY_NAME "Budget_App")
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.
