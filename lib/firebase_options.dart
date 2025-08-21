@@ -63,11 +63,13 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyAVFQPtN5N_o_kH2bkPBaOCw5ecmFjp-mE',
-    appId: '1:1072682623856:ios:af9fdb89286591352865b5',
+    appId: '1:1072682623856:ios:ecdbfb091841463c2865b5',
     messagingSenderId: '1072682623856',
     projectId: 'budget-app-8d',
     storageBucket: 'budget-app-8d.firebasestorage.app',
-    iosBundleId: 'com.codingliquids.budgetAppStarting',
+    androidClientId: '1072682623856-r24148miom2r7f5lu3rc6gsgugt5n1mq.apps.googleusercontent.com',
+    iosClientId: '1072682623856-rsa1j7inpg6l40oom4gbi3bjblkei3r0.apps.googleusercontent.com',
+    iosBundleId: 'com.example.muskan-poddar',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
