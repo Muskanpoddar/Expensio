@@ -3,21 +3,23 @@
 <plist version="1.0">
 <dict>
 	<key>CLIENT_ID</key>
-	<string>357935783557-oh15arfgp9ls3bp7ufv0m954r1igevdt.apps.googleusercontent.com</string>
+	<string>1072682623856-rsa1j7inpg6l40oom4gbi3bjblkei3r0.apps.googleusercontent.com</string>
 	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.357935783557-oh15arfgp9ls3bp7ufv0m954r1igevdt</string>
+	<string>com.googleusercontent.apps.1072682623856-rsa1j7inpg6l40oom4gbi3bjblkei3r0</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>1072682623856-r24148miom2r7f5lu3rc6gsgugt5n1mq.apps.googleusercontent.com</string>
 	<key>API_KEY</key>
-	<string>AIzaSyDMMHJsNTy0Xqi-dDY7bHZ9YXRUPO9ccCI</string>
+	<string>AIzaSyAVFQPtN5N_o_kH2bkPBaOCw5ecmFjp-mE</string>
 	<key>GCM_SENDER_ID</key>
-	<string>357935783557</string>
+	<string>1072682623856</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.codingliquids.budgetAppStarting</string>
+	<string>com.example.muskan-poddar</string>
 	<key>PROJECT_ID</key>
-	<string>budget-app-89e2f</string>
+	<string>budget-app-8d</string>
 	<key>STORAGE_BUCKET</key>
-	<string>budget-app-89e2f.appspot.com</string>
+	<string>budget-app-8d.firebasestorage.app</string>
 	<key>IS_ADS_ENABLED</key>
 	<false></false>
 	<key>IS_ANALYTICS_ENABLED</key>
@@ -29,6 +31,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:357935783557:ios:c30df50b09ca6b1c7ed3ec</string>
+	<string>1:1072682623856:ios:ecdbfb091841463c2865b5</string>
 </dict>
 </plist>
