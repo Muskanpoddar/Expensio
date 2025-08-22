@@ -7,13 +7,15 @@ import 'package:logger/logger.dart';
 
 import 'components.dart';
 
-final viewModel =
-    ChangeNotifierProvider.autoDispose<ViewModel>((ref) => ViewModel());
+final viewModel = ChangeNotifierProvider.autoDispose<ViewModel>(
+  (ref) => ViewModel(),
+);
 
 class ViewModel extends ChangeNotifier {
   final _auth = FirebaseAuth.instance;
-  CollectionReference userCollection =
-      FirebaseFirestore.instance.collection('users');
+  CollectionReference userCollection = FirebaseFirestore.instance.collection(
+    'users',
+  );
   bool isSignedIn = false;
   bool isObscure = true;
   var logger = Logger();
@@ -35,20 +37,43 @@ class ViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  toggleObscure() {
+    isObscure = !isObscure;
+    notifyListeners();
+  }
+
+  //Authentication
+  Future<void> createUserWithEmailAndPassword(
+    BuildContext context,
+    String email,
+    String password,
+  ) async {
+    await _auth
+        .createUserWithEmailAndPassword(email: email, password: password)
+        .then((value) => logger.d("Registration Successful"))
+        .onError((error, stackTrace) {
+          logger.d("Registration error $error");
+          DialogBox(
+            context,
+            error.toString().replaceAll(RegExp('\\[.*?\\]'), ''),
+          );
+        });
+  }
+
   //--------------------------------------------------------------------
   ///  GOOGLE-SIGN-IN  – MOBILE  (Android / iOS)  – v 7 API
-//--------------------------------------------------------------------
+  //--------------------------------------------------------------------
   Future<void> signInWithGoogleMobile(BuildContext context) async {
     final GoogleSignInAccount account = await _google
         .authenticate(scopeHint: const ['email']) // replaces signIn()
         .onError((error, stackTrace) {
-      logger.d(error);
-      DialogBox(
-        context,
-        error.toString().replaceAll(RegExp(r'\[.*?\]'), ''),
-      );
-      throw error!;
-    });
+          logger.d(error);
+          DialogBox(
+            context,
+            error.toString().replaceAll(RegExp(r'\[.*?\]'), ''),
+          );
+          throw error!;
+        });
 
     // authentication is now *synchronous* and returns only idToken
     final String? idToken = account.authentication.idToken;
@@ -57,13 +82,13 @@ class ViewModel extends ChangeNotifier {
 
     await _auth
         .signInWithCredential(credential)
-        .then(
-          (value) => logger.e('Signed in successfully $value'),
-    )
+        .then((value) => logger.e('Signed in successfully $value'))
         .onError((error, stackTrace) {
-      DialogBox(context, error.toString().replaceAll(RegExp(r'\[.*?\]'), ''));
-      logger.d(error);
-    });
+          DialogBox(
+            context,
+            error.toString().replaceAll(RegExp(r'\[.*?\]'), ''),
+          );
+          logger.d(error);
+        });
   }
-
 }
