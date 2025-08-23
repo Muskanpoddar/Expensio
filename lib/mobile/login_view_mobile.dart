@@ -1,5 +1,7 @@
-import 'package:Budget_App/components.dart';
+import 'package:Budget_App/pages/button.dart';
+import 'package:Budget_App/pages/text_form_email.dart';
 import 'package:Budget_App/view_model.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -8,104 +10,75 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 class LoginViewMobile extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    TextEditingController _emailField = useTextEditingController();
-    TextEditingController _passwordField = useTextEditingController();
+    final TextEditingController _emailField = useTextEditingController();
+    final TextEditingController _passwordField = useTextEditingController();
     final viewModelProvider = ref.watch(viewModel);
     final double deviceHeight = MediaQuery.of(context).size.height;
-    return SafeArea(
-      child: Scaffold(
-        body: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              SizedBox(height: deviceHeight / 5.5),
-              Image.asset("assets/logo.png", fit: BoxFit.contain, width: 210.0),
-              SizedBox(height: 30.0),
-              SizedBox(
-                width: 350.0,
-                child: TextFormField(
-                  keyboardType: TextInputType.emailAddress,
 
-                  textAlign: TextAlign.center,
-                  controller: _emailField,
-                  decoration: InputDecoration(
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(10.0)),
-                    ),
-                    focusedErrorBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(10.0)),
-                    ),
-                    prefixIcon: Icon(
-                      Icons.email,
-                      color: Colors.black,
-                      size: 30.0,
-                    ),
-                    hintText: "Email",
-                    hintStyle: GoogleFonts.openSans(),
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8F6FF), // Soft background
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                SizedBox(height: deviceHeight * 0.1),
+
+                // Logo
+                Center(
+                  child: Image.asset(
+                    "assets/logo.png",
+                    fit: BoxFit.contain,
+                    width: 180.0,
                   ),
                 ),
-              ),
-              SizedBox(height: 20.0),
-              SizedBox(
-                width: 350.0,
-                child: TextFormField(
-                  textAlign: TextAlign.center,
-                  controller: _passwordField,
-                  obscureText: viewModelProvider.isObscure,
-                  decoration: InputDecoration(
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(10.0)),
-                    ),
-                    focusedErrorBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(10.0)),
-                    ),
-                    prefixIcon: IconButton(
-                      icon: Icon(
-                        viewModelProvider.isObscure
-                            ? Icons.visibility
-                            : Icons.visibility_off,
-                        color: Colors.black,
-                      ),
-                      onPressed: () {
-                        viewModelProvider.toggleObscure();
-                      },
-                    ),
-                    hintText: "Password",
-                    hintStyle: GoogleFonts.openSans(),
+
+                const SizedBox(height: 40.0),
+
+                // Email Field
+                TextFormEmail(emailField: _emailField),
+                const SizedBox(height: 20.0),
+
+                // Password Field
+                TextFormPassword(
+                  passwordField: _passwordField,
+                  viewModelProvider: viewModelProvider,
+                ),
+                const SizedBox(height: 30.0),
+
+                // Register Button
+                RegisterButton(
+                  viewModelProvider: viewModelProvider,
+                  emailField: _emailField,
+                  passwordField: _passwordField,
+                ),
+                const SizedBox(height: 20.0),
+
+                // OR text
+                Text(
+                  "Or",
+                  style: GoogleFonts.pacifico(
+                    color: Colors.black87,
+                    fontSize: 16.0,
                   ),
                 ),
-              ),
-              SizedBox(height: 30.0),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    height: 50.0,
-                    width: 150.0,
+                const SizedBox(height: 20.0),
 
-                    child: MaterialButton(
-                      onPressed: () async {
-                        await viewModelProvider.createUserWithEmailAndPassword(
-                          context,
-                          _emailField.text,
-                          _passwordField.text,
-                        );
-                      },
-                      child: OpenSans(
-                        text: "Register",
-                        size: 25.0,
-                        color: Colors.white,
-                      ),
-                      splashColor: Colors.grey,
-                      color: Colors.black,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10.0),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+                // Login Button
+                LoginButton(
+                  viewModelProvider: viewModelProvider,
+                  emailField: _emailField,
+                  passwordField: _passwordField,
+                ),
+                const SizedBox(height: 30.0),
+
+                // Google Sign-In Button
+                SignInbutton(viewModelProvider: viewModelProvider),
+                const SizedBox(height: 40.0),
+              ],
+            ),
           ),
         ),
       ),
