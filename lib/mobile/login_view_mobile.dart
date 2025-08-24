@@ -12,7 +12,10 @@ class LoginViewMobile extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final TextEditingController _emailField = useTextEditingController();
     final TextEditingController _passwordField = useTextEditingController();
-    final viewModelProvider = ref.watch(viewModel);
+
+    // ✅ Use the provider correctly
+    final vm = ref.watch(viewModel);
+
     final double deviceHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
@@ -44,13 +47,13 @@ class LoginViewMobile extends HookConsumerWidget {
                 // Password Field
                 TextFormPassword(
                   passwordField: _passwordField,
-                  viewModelProvider: viewModelProvider,
+                  viewModelProvider: vm, // ✅ Pass vm
                 ),
                 const SizedBox(height: 30.0),
 
                 // Register Button
                 RegisterButton(
-                  viewModelProvider: viewModelProvider,
+                  viewModelProvider: vm, // ✅ Pass vm
                   emailField: _emailField,
                   passwordField: _passwordField,
                 ),
@@ -68,14 +71,14 @@ class LoginViewMobile extends HookConsumerWidget {
 
                 // Login Button
                 LoginButton(
-                  viewModelProvider: viewModelProvider,
+                  viewModelProvider: vm, // ✅ Pass vm
                   emailField: _emailField,
                   passwordField: _passwordField,
                 ),
                 const SizedBox(height: 30.0),
 
                 // Google Sign-In Button
-                SignInbutton(viewModelProvider: viewModelProvider),
+                SignInbutton(viewModelProvider: vm), // ✅ Pass vm
                 const SizedBox(height: 40.0),
               ],
             ),
