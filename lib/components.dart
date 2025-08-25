@@ -1,3 +1,6 @@
+import 'package:Budget_App/screens/report_page.dart';
+import 'package:Budget_App/screens/setting_page.dart';
+import 'package:Budget_App/screens/transaction_page.dart';
 import 'package:Budget_App/utils/colors.dart';
 import 'package:Budget_App/view_model.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -279,6 +282,7 @@ class DrawerExpense extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final viewModelProvider = ref.watch(viewModel);
+
     return Drawer(
       child: Container(
         decoration: const BoxDecoration(
@@ -291,6 +295,7 @@ class DrawerExpense extends HookConsumerWidget {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
+            // ==== Drawer Header ====
             DrawerHeader(
               padding: const EdgeInsets.only(bottom: 10.0),
               decoration: BoxDecoration(color: Colors.deepPurple.shade100),
@@ -323,7 +328,49 @@ class DrawerExpense extends HookConsumerWidget {
                 ],
               ),
             ),
+
+            // ==== Menu Items ====
+            ListTile(
+              leading: const Icon(Icons.dashboard, color: Colors.deepPurple),
+              title: const Text("Dashboard"),
+              onTap: () {
+                Navigator.pop(context); // close drawer, stay on dashboard
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.list, color: Colors.deepPurple),
+              title: const Text("Transactions"),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const TransactionsPage()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.pie_chart, color: Colors.deepPurple),
+              title: const Text("Reports"),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ReportsPage()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.settings, color: Colors.deepPurple),
+              title: const Text("Settings"),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SettingsPage()),
+                );
+              },
+            ),
+
             const SizedBox(height: 20),
+
+            // ==== Logout Button ====
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 30.0),
               child: ElevatedButton.icon(
@@ -337,18 +384,23 @@ class DrawerExpense extends HookConsumerWidget {
                   ),
                 ),
                 icon: const Icon(Icons.logout, color: Colors.white),
-                label: OpenSans(
-                  text: "Logout",
-                  size: 20,
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
+                label: const Text(
+                  "Logout",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
                 ),
                 onPressed: () async {
                   await viewModelProvider.logout();
                 },
               ),
             ),
+
             const SizedBox(height: 40),
+
+            // ==== Social Links ====
             Center(
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
