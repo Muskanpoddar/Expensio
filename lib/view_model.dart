@@ -21,6 +21,14 @@ class ViewModel extends ChangeNotifier {
   /// Firebase & Google
   final _auth = FirebaseAuth.instance;
   final GoogleSignIn _google = GoogleSignIn.instance;
+  final notificationsProvider = StateProvider<bool>((ref) => true);
+  bool _notificationsEnabled = true;
+  bool get notificationsEnabled => _notificationsEnabled;
+
+  void toggleNotifications(bool value) {
+    _notificationsEnabled = value;
+    notifyListeners();
+  }
 
   /// Logger
   final Logger logger = Logger();
@@ -33,7 +41,8 @@ class ViewModel extends ChangeNotifier {
   /// State
   List<Models> expenses = [];
   List<Models> incomes = [];
-  bool isObscure = true;
+  bool isObscure = true; // For password field
+  bool isBalanceHidden = false; // 👈 For privacy toggle
 
   int totalExpense = 0;
   int totalIncome = 0;
@@ -69,35 +78,99 @@ class ViewModel extends ChangeNotifier {
   Map<String, int> expenseTotalsByCategory = {};
   Map<String, int> incomeTotalsByCategory = {};
 
-  /// Auth stream
+  List<Map<String, dynamic>> get transactions {
+    final List<Map<String, dynamic>> all = [];
+
+    for (var e in expenses) {
+      all.add({
+        "title": e.name,
+        "amount": -(int.tryParse(e.amount) ?? 0), // negative for expenses
+        "date": e.date ?? "",
+        "category": e.category,
+      });
+    }
+
+    for (var i in incomes) {
+      all.add({
+        "title": i.name,
+        "amount": int.tryParse(i.amount) ?? 0,
+        "date": i.date ?? "",
+        "category": i.category,
+      });
+    }
+
+    all.sort((a, b) => b["date"].compareTo(a["date"]));
+    return all;
+  }
+
+  /// ==================== REPORT HELPERS ====================
+  Map<String, int> get incomeVsExpense => {
+    "Income": totalIncome,
+    "Expense": totalExpense,
+  };
+
+  List<Map<String, dynamic>> get expenseReportData {
+    return expenseTotalsByCategory.entries.map((e) {
+      return {"category": e.key, "amount": e.value};
+    }).toList();
+  }
+
+  List<Map<String, dynamic>> get incomeReportData {
+    return incomeTotalsByCategory.entries.map((e) {
+      return {"category": e.key, "amount": e.value};
+    }).toList();
+  }
+
+  List<Map<String, dynamic>> get dailyReportData {
+    final Map<String, int> dailyTotals = {};
+
+    for (var t in transactions) {
+      final date = (t["date"] as String).split("T").first;
+      dailyTotals[date] = (dailyTotals[date] ?? 0) + t["amount"] as int;
+    }
+
+    final list =
+        dailyTotals.entries.map((e) {
+          return {"date": e.key, "amount": e.value};
+        }).toList();
+
+    list.sort((a, b) => (a["date"] as String).compareTo(b["date"] as String));
+    return list;
+  }
+
+  /// ==================== AUTH ====================
   Stream<User?> get authStateChange => _auth.authStateChanges();
 
-  /// Logout
   Future<void> logout() async => await _auth.signOut();
 
-  /// Toggle password visibility
+  /// ==================== TOGGLES ====================
   void toggleObscure() {
     isObscure = !isObscure;
     notifyListeners();
   }
 
-  /// Total calculation
+  void togglePrivacy() {
+    isBalanceHidden = !isBalanceHidden;
+    notifyListeners();
+  }
+
+  /// ==================== CALCULATIONS ====================
+
   void calculate() {
     totalExpense = 0;
     totalIncome = 0;
 
     for (final e in expenses) {
-      totalExpense += int.parse(e.amount);
+      totalExpense += int.tryParse(e.amount) ?? 0;
     }
     for (final i in incomes) {
-      totalIncome += int.parse(i.amount);
+      totalIncome += int.tryParse(i.amount) ?? 0;
     }
 
     budgetLeft = totalIncome - totalExpense;
     notifyListeners();
   }
 
-  /// Totals per category
   void calculateCategoryTotals() {
     expenseTotalsByCategory = {};
     incomeTotalsByCategory = {};
@@ -210,6 +283,15 @@ class ViewModel extends ChangeNotifier {
     final controllerName = TextEditingController();
     final controllerAmount = TextEditingController();
 
+    await userCollection.doc(_auth.currentUser!.uid).collection("expenses").add(
+      {
+        "name": controllerName.text,
+        "amount": controllerAmount.text,
+        "category": selectedExpenseCategory,
+        "date": DateTime.now().toIso8601String(), // 👈 NEW
+      },
+    );
+
     return await showDialog(
       context: context,
       builder:
@@ -318,6 +400,13 @@ class ViewModel extends ChangeNotifier {
     final formKey = GlobalKey<FormState>();
     final controllerName = TextEditingController();
     final controllerAmount = TextEditingController();
+
+    await userCollection.doc(_auth.currentUser!.uid).collection("incomes").add({
+      "name": controllerName.text,
+      "amount": controllerAmount.text,
+      "category": selectedIncomeCategory,
+      "date": DateTime.now().toIso8601String(), // 👈 NEW
+    });
 
     return await showDialog(
       context: context,
@@ -449,7 +538,6 @@ class ViewModel extends ChangeNotifier {
         logger.d(expensesName, error: expensesAmount);
         notifyListeners();
       }
-
       calculate();
       calculateCategoryTotals(); // NEW
     }
@@ -478,7 +566,6 @@ class ViewModel extends ChangeNotifier {
         logger.d(incomesName, error: incomesAmount);
         notifyListeners();
       }
-
       calculate();
       calculateCategoryTotals(); // NEW
     }
@@ -505,5 +592,87 @@ class ViewModel extends ChangeNotifier {
             ds.reference.delete();
           }
         });
+  }
+
+  /// ==================== SETTINGS ====================
+
+  /// Change display name
+  Future<void> updateDisplayName(BuildContext context, String newName) async {
+    try {
+      await _auth.currentUser!.updateDisplayName(newName);
+      await userCollection.doc(_auth.currentUser!.uid).set({
+        "displayName": newName,
+      }, SetOptions(merge: true));
+      notifyListeners();
+      DialogBox(context, "Name updated successfully!");
+    } catch (e) {
+      logger.e("Name update error: $e");
+      DialogBox(context, e.toString());
+    }
+  }
+
+  /// Backup user data to Firestore
+  Future<void> backupData(BuildContext context) async {
+    try {
+      await userCollection.doc(_auth.currentUser!.uid).set({
+        "backup": {
+          "expenses": expenses.map((e) => e.toJson()).toList(),
+          "incomes": incomes.map((i) => i.toJson()).toList(),
+          "timestamp": DateTime.now().toIso8601String(),
+        },
+      }, SetOptions(merge: true));
+      DialogBox(context, "Backup successful!");
+    } catch (e) {
+      logger.e("Backup error: $e");
+      DialogBox(context, "Backup failed: $e");
+    }
+  }
+
+  /// Restore user data from Firestore
+  /// Restore user data from Firestore
+  Future<void> restoreData(BuildContext context) async {
+    try {
+      final doc = await userCollection.doc(_auth.currentUser!.uid).get();
+      final data = doc.data(); // Map<String, dynamic>?
+      if (data == null) {
+        DialogBox(context, "No data found.");
+        return;
+      }
+
+      // ✅ Cast backup safely
+      final backup =
+          (data as Map<String, dynamic>)["backup"] as Map<String, dynamic>?;
+
+      if (backup != null) {
+        // ✅ Explicitly cast to List<Map<String, dynamic>>
+        final expensesList =
+            (backup["expenses"] as List<dynamic>? ?? [])
+                .map(
+                  (e) => Models.fromJson(Map<String, dynamic>.from(e as Map)),
+                )
+                .toList();
+
+        final incomesList =
+            (backup["incomes"] as List<dynamic>? ?? [])
+                .map(
+                  (i) => Models.fromJson(Map<String, dynamic>.from(i as Map)),
+                )
+                .toList();
+
+        expenses = expensesList;
+        incomes = incomesList;
+
+        calculate();
+        calculateCategoryTotals();
+        notifyListeners();
+
+        DialogBox(context, "✅ Restore successful!");
+      } else {
+        DialogBox(context, "⚠️ No backup found.");
+      }
+    } catch (e) {
+      logger.e("Restore error: $e");
+      DialogBox(context, "❌ Restore failed: $e");
+    }
   }
 }
