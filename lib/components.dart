@@ -1,15 +1,10 @@
-import 'package:Budget_App/screens/report_page.dart';
-import 'package:Budget_App/screens/setting_page.dart';
-import 'package:Budget_App/screens/transaction_page.dart';
 import 'package:Budget_App/utils/colors.dart';
 import 'package:Budget_App/view_model.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class OpenSans extends StatelessWidget {
   final String text;
@@ -114,51 +109,47 @@ class IncomeExpenseRow extends StatelessWidget {
 class IncomeExpenseRowMobile extends StatelessWidget {
   final String text;
   final double amount;
+  final bool isExpense;
 
   const IncomeExpenseRowMobile({
     Key? key,
     required this.text,
     required this.amount,
+    required this.isExpense,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 6),
-      padding: EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+      margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.deepPurple.shade600,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.deepPurple.shade400.withOpacity(0.5),
-            blurRadius: 6,
-            offset: Offset(0, 3),
-          ),
-        ],
+        color: isExpense ? Colors.red.shade50 : Colors.green.shade50,
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         children: [
+          /// Name (ellipsis so no overflow)
           Expanded(
-            flex: 2,
             child: Text(
               text,
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                color: Colors.white,
+              style: TextStyle(
+                fontSize: 15,
                 fontWeight: FontWeight.w500,
+                color: isExpense ? Colors.red.shade700 : Colors.green.shade700,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis, // ✅ no overflow
             ),
           ),
-          const SizedBox(width: 10),
+
+          /// Amount aligned right
           Text(
             "${amount.toStringAsFixed(2)} \$",
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: isExpense ? Colors.red.shade700 : Colors.green.shade700,
             ),
           ),
         ],
@@ -178,7 +169,7 @@ class AddExpense extends HookConsumerWidget {
         label: Poppins(text: "Add Expense", size: 16.0, color: Colors.white),
         style: ElevatedButton.styleFrom(
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-          backgroundColor: Colors.deepPurple.shade700,
+          backgroundColor: const Color.fromARGB(255, 106, 65, 202),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),
           ),
@@ -235,7 +226,7 @@ class TotalCalculation extends HookConsumerWidget {
           "Budget Left",
           "${viewModelProvider.budgetLeft}\$",
           size,
-          Colors.black,
+          Colors.white,
         ),
         _buildRow(
           "Total Expense",
@@ -247,7 +238,7 @@ class TotalCalculation extends HookConsumerWidget {
           "Total Income",
           "${viewModelProvider.totalIncome}\$",
           size,
-          const Color.fromARGB(255, 13, 153, 85),
+          const Color.fromARGB(255, 38, 246, 45),
         ),
       ],
     );
@@ -262,7 +253,7 @@ class TotalCalculation extends HookConsumerWidget {
           Poppins(
             text: label,
             size: size,
-            color: Colors.black,
+            color: Colors.white,
             fontWeight: FontWeight.w600,
           ),
           Poppins(
@@ -282,158 +273,34 @@ class DrawerExpense extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final viewModelProvider = ref.watch(viewModel);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Drawer(
       child: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFEDE7F6), Color(0xFFD1C4E9)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
+        color: colorScheme.surface,
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
             // ==== Drawer Header ====
             DrawerHeader(
               padding: const EdgeInsets.only(bottom: 10.0),
-              decoration: BoxDecoration(color: Colors.deepPurple.shade100),
+              decoration: BoxDecoration(color: colorScheme.primaryContainer),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        width: 3.0,
-                        color: Colors.deepPurple.shade700,
-                      ),
-                    ),
-                    child: CircleAvatar(
-                      radius: 50,
-                      backgroundColor: Colors.white,
-                      child: Image.asset('assets/logo.png', height: 60),
-                    ),
+                  CircleAvatar(
+                    radius: 50,
+                    backgroundColor: colorScheme.onPrimary,
+                    child: Image.asset('assets/logo.png', height: 60),
                   ),
                   const SizedBox(height: 12),
-                  const Text(
-                    "Budget Buddy",
-                    style: TextStyle(
+                  Text(
+                    "Expensio",
+                    style: theme.textTheme.titleMedium?.copyWith(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Colors.deepPurple,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // ==== Menu Items ====
-            ListTile(
-              leading: const Icon(Icons.dashboard, color: Colors.deepPurple),
-              title: const Text("Dashboard"),
-              onTap: () {
-                Navigator.pop(context); // close drawer, stay on dashboard
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.list, color: Colors.deepPurple),
-              title: const Text("Transactions"),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const TransactionsPage()),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.pie_chart, color: Colors.deepPurple),
-              title: const Text("Reports"),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ReportsPage()),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.settings, color: Colors.deepPurple),
-              title: const Text("Settings"),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const SettingsPage()),
-                );
-              },
-            ),
-
-            const SizedBox(height: 20),
-
-            // ==== Logout Button ====
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 30.0),
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.deepPurple,
-                  elevation: 8,
-                  shadowColor: Colors.deepPurpleAccent,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                ),
-                icon: const Icon(Icons.logout, color: Colors.white),
-                label: const Text(
-                  "Logout",
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-                onPressed: () async {
-                  await viewModelProvider.logout();
-                },
-              ),
-            ),
-
-            const SizedBox(height: 40),
-
-            // ==== Social Links ====
-            Center(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  IconButton(
-                    tooltip: "Instagram",
-                    onPressed:
-                        () async => await launchUrl(
-                          Uri.parse("https://www.instagram.com/tomcruise"),
-                        ),
-                    icon: SvgPicture.asset(
-                      "assets/instagram.svg",
-                      colorFilter: const ColorFilter.mode(
-                        Colors.deepPurple,
-                        BlendMode.srcIn,
-                      ),
-                      width: 36,
-                    ),
-                  ),
-                  const SizedBox(width: 20),
-                  IconButton(
-                    tooltip: "Twitter",
-                    onPressed:
-                        () async => await launchUrl(
-                          Uri.parse("https://www.twitter.com/tomcruise"),
-                        ),
-                    icon: SvgPicture.asset(
-                      "assets/twitter.svg",
-                      colorFilter: const ColorFilter.mode(
-                        Colors.deepPurple,
-                        BlendMode.srcIn,
-                      ),
-                      width: 36,
+                      color: colorScheme.onPrimaryContainer,
                     ),
                   ),
                 ],
