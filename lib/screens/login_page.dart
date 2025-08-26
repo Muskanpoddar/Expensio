@@ -1,6 +1,8 @@
 import 'package:Budget_App/pages/button.dart';
 import 'package:Budget_App/pages/text_form.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../view_model.dart';
 
@@ -11,80 +13,77 @@ class LoginPage extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final viewModelProvider = ref.watch(viewModel);
-    final emailController = TextEditingController();
-    final passwordController = TextEditingController();
+    final TextEditingController _emailField = useTextEditingController();
+    final TextEditingController _passwordField = useTextEditingController();
+
+    // ✅ Use the provider correctly
+    final vm = ref.watch(viewModel);
+
+    final double deviceHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF8F6FF), // Soft background
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const Icon(
-                  Icons.account_balance_wallet,
-                  size: 80,
-                  color: Colors.deepPurple,
+                SizedBox(height: deviceHeight * 0.1),
+
+                // Logo
+                Center(
+                  child: Image.asset(
+                    "assets/logo.png",
+                    fit: BoxFit.contain,
+                    width: 180.0,
+                  ),
                 ),
-                const SizedBox(height: 16),
-                const Text(
-                  "Budget App",
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 32),
+
+                const SizedBox(height: 40.0),
 
                 // Email Field
-                TextFormEmail(emailField: emailController),
-                const SizedBox(height: 16),
+                TextFormEmail(emailField: _emailField),
+                const SizedBox(height: 20.0),
 
                 // Password Field
                 TextFormPassword(
-                  passwordField: passwordController,
-                  viewModelProvider: viewModelProvider,
+                  passwordField: _passwordField,
+                  viewModelProvider: vm, // ✅ Pass vm
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 30.0),
 
-                // Buttons Row (Login + Register)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    LoginButton(
-                      viewModelProvider: viewModelProvider,
-                      emailField: emailController,
-                      passwordField: passwordController,
-                    ),
-                    RegisterButton(
-                      viewModelProvider: viewModelProvider,
-                      emailField: emailController,
-                      passwordField: passwordController,
-                    ),
-                  ],
+                // Register Button
+                RegisterButton(
+                  // ✅ Pass vm
+                  emailField: _emailField,
+                  passwordField: _passwordField,
+                  viewModelProvider: vm,
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 20.0),
 
-                // Divider
-                Row(
-                  children: const [
-                    Expanded(child: Divider()),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8),
-                      child: Text("OR"),
-                    ),
-                    Expanded(child: Divider()),
-                  ],
+                // OR text
+                Text(
+                  "Or",
+                  style: GoogleFonts.pacifico(
+                    color: Colors.black87,
+                    fontSize: 16.0,
+                  ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 20.0),
 
-                // Google Sign-In
-                SignInbutton(viewModelProvider: viewModelProvider),
-
-                const SizedBox(height: 40),
-                const Text(
-                  "Welcome! Sign in to manage your budget.",
-                  style: TextStyle(color: Colors.grey),
+                // Login Button
+                LoginButton(
+                  viewModelProvider: vm, // ✅ Pass vm
+                  emailField: _emailField,
+                  passwordField: _passwordField,
                 ),
+                const SizedBox(height: 30.0),
+
+                // Google Sign-In Button
+                SignInbutton(viewModelProvider: vm), // ✅ Pass vm
+                const SizedBox(height: 40.0),
               ],
             ),
           ),
