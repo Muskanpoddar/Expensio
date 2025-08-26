@@ -3,7 +3,7 @@ description: A new Flutter project.
 
 publish_to: "none" # Remove this line if you wish to publish to pub.dev
 
-version: 1.0.0+1
+version: 1.0.1+2
 
 environment:
   sdk: ">=3.7.2 <6.0.0"
@@ -26,6 +26,7 @@ dependencies:
   url_launcher: ^6.3.1
   flutter_svg: ^2.2.0
   fl_chart: ^0.70.0
+  intl: ^0.18.1
 
 dev_dependencies:
   flutter_test:
@@ -33,7 +34,7 @@ dev_dependencies:
   launcher_name: ^1.0.2
 
 launcher_name:
-  default: "Budget App"
+  default: "Expensio"
 
   flutter_lints: ^6.0.0
 
@@ -61,5 +62,3 @@ flutter:
           weight: 800
         - asset: assets/fonts/Poppins/Poppins-Black.ttf
           weight: 900
-
-
