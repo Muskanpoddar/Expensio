@@ -14,8 +14,11 @@ class Models {
   /// ✅ Convert JSON → Model
   factory Models.fromJson(Map<String, dynamic> json) {
     return Models(
-      name: json['name'] ?? '',
-      amount: json['amount']?.toString() ?? '0',
+      name: (json['name'] ?? '').toString(),
+      amount:
+          (json['amount'] != null && json['amount'].toString().isNotEmpty)
+              ? json['amount'].toString()
+              : '', // 👈 empty instead of 0
       category: json['category'] ?? 'Other',
       date: json['date'], // can be null
     );
