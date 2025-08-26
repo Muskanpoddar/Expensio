@@ -11,10 +11,9 @@ bool isLoading = true;
 class ExpenseViewMobile extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // ✅ Correct provider usage
     final vm = ref.watch(viewModel);
 
-    if (isLoading == true) {
+    if (isLoading) {
       vm.expensesStream();
       vm.incomesStream();
       isLoading = false;
@@ -25,10 +24,12 @@ class ExpenseViewMobile extends HookConsumerWidget {
     return SafeArea(
       child: Scaffold(
         drawer: DrawerExpense(),
+        backgroundColor: Colors.grey.shade100,
         appBar: AppBar(
-          iconTheme: const IconThemeData(color: Colors.white, size: 30),
+          iconTheme: const IconThemeData(color: Colors.white, size: 26),
           centerTitle: true,
           backgroundColor: Colors.deepPurple,
+          elevation: 0,
           title: const Poppins(
             text: "Dashboard",
             size: 20.0,
@@ -38,10 +39,8 @@ class ExpenseViewMobile extends HookConsumerWidget {
           actions: [
             IconButton(
               tooltip: "Refresh Data",
-              onPressed: () async {
-                await vm.reset();
-              },
-              icon: const Icon(Icons.refresh),
+              onPressed: () async => await vm.reset(),
+              icon: const Icon(Icons.refresh, color: Colors.white),
             ),
           ],
         ),
@@ -50,186 +49,355 @@ class ExpenseViewMobile extends HookConsumerWidget {
                 ? const Center(child: CircularProgressIndicator())
                 : ListView(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 30,
+                    horizontal: 16,
+                    vertical: 20,
                   ),
                   children: [
+                    /// ==== Total Summary Card ====
                     Center(
                       child: Container(
-                        height: 230,
-                        width: screenWidth * 0.8,
+                        width: screenWidth * 0.9,
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: Colors.deepPurple.shade700,
-                          borderRadius: BorderRadius.circular(25),
+                          gradient: LinearGradient(
+                            colors: [
+                              const Color.fromARGB(255, 104, 47, 177),
+                              Color.fromARGB(255, 190, 134, 243),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.deepPurple.shade300.withOpacity(
-                                0.5,
-                              ),
-                              blurRadius: 15,
-                              offset: const Offset(0, 6),
+                              color: Colors.indigo.withOpacity(0.2),
+                              blurRadius: 12,
+                              offset: const Offset(0, 5),
                             ),
                           ],
                         ),
-                        child: TotalCalculation(16.0),
+                        child: TotalCalculation(18.0),
                       ),
                     ),
-                    const SizedBox(height: 35),
+
+                    const SizedBox(height: 28),
+
+                    /// ==== Add Buttons ====
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         AddExpense(),
-                        const SizedBox(width: 20),
+                        const SizedBox(width: 14),
                         AddIncome(),
                       ],
                     ),
-                    const SizedBox(height: 35),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Poppins(
-                                text: "Expenses",
-                                size: 18.0,
-                                color: Colors.deepPurple.shade900,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              const SizedBox(height: 10),
-                              Container(
-                                height: 230,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(15),
-                                  border: Border.all(
-                                    color: Colors.deepPurple.shade200,
-                                    width: 1.5,
-                                  ),
-                                  color: Colors.deepPurple.shade50,
-                                ),
-                                padding: const EdgeInsets.all(10),
-                                child: ListView.builder(
-                                  itemCount: vm.expenses.length,
-                                  itemBuilder: (context, index) {
-                                    final e = vm.expenses[index];
-                                    return IncomeExpenseRowMobile(
-                                      text: e.name,
-                                      amount: double.tryParse(e.amount) ?? 0,
-                                    );
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 20),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Poppins(
-                                text: "Incomes",
-                                size: 18.0,
-                                color: Colors.deepPurple.shade900,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              const SizedBox(height: 10),
-                              Container(
-                                height: 230,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(15),
-                                  border: Border.all(
-                                    color: Colors.deepPurple.shade200,
-                                    width: 1.5,
-                                  ),
-                                  color: Colors.deepPurple.shade50,
-                                ),
-                                padding: const EdgeInsets.all(10),
-                                child: ListView.builder(
-                                  itemCount: vm.incomes.length,
-                                  itemBuilder: (context, index) {
-                                    final i = vm.incomes[index];
-                                    return IncomeExpenseRowMobile(
-                                      text: i.name,
-                                      amount: double.tryParse(i.amount) ?? 0,
-                                    );
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
 
-                    // ==== Add Category-wise Expense Summary and Pie Chart here ==== //
-                    const SizedBox(height: 35),
-                    Column(
+                    const SizedBox(height: 32),
+
+                    /// ==== Expense / Income Cards ====
+                    Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Poppins(
-                          text: "Expense by Category",
-                          size: 18.0,
-                          color: Colors.deepPurple.shade900,
-                          fontWeight: FontWeight.bold,
+                        Expanded(
+                          child: _buildCardSection(
+                            context: context,
+                            title: "Expenses",
+                            icon: Icons.arrow_upward,
+                            iconColor: Colors.redAccent,
+                            items:
+                                vm.expenses
+                                    .map(
+                                      (e) => IncomeExpenseRowMobile(
+                                        text: e.name,
+                                        amount: double.tryParse(e.amount) ?? 0,
+                                        isExpense: true,
+                                      ),
+                                    )
+                                    .toList(),
+                            onViewAll:
+                                () => _showAllBottomSheet(
+                                  context,
+                                  "All Expenses",
+                                  vm.expenses
+                                      .map(
+                                        (e) => IncomeExpenseRowMobile(
+                                          text: e.name,
+                                          amount:
+                                              double.tryParse(e.amount) ?? 0,
+                                          isExpense: true,
+                                        ),
+                                      )
+                                      .toList(),
+                                ),
+                          ),
                         ),
-                        const SizedBox(height: 10),
-
-                        // Category totals list
-                        Column(
-                          children:
-                              vm.expenseTotalsByCategory.entries.map((entry) {
-                                return ListTile(
-                                  title: Text(entry.key),
-                                  trailing: Text('${entry.value}\$'),
-                                );
-                              }).toList(),
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        // Pie Chart for category expenses
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => FullPieChartPage(vm: vm),
-                              ),
-                            );
-                          },
-                          child: SizedBox(
-                            height: 200,
-                            child: PieChart(
-                              PieChartData(
-                                sections:
-                                    vm.expenseTotalsByCategory.entries.map((
-                                      entry,
-                                    ) {
-                                      final value = entry.value.toDouble();
-                                      return PieChartSectionData(
-                                        value: value,
-                                        title: '',
-                                        color: getColorForCategory(entry.key),
-                                        radius: 60,
-                                      );
-                                    }).toList(),
-                                centerSpaceRadius: 35, // donut preview
-                                sectionsSpace: 2,
-                              ),
-                              swapAnimationDuration: const Duration(
-                                milliseconds: 600,
-                              ),
-                              swapAnimationCurve: Curves.easeOut,
-                            ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: _buildCardSection(
+                            context: context,
+                            title: "Incomes",
+                            icon: Icons.arrow_downward,
+                            iconColor: Colors.green,
+                            items:
+                                vm.incomes
+                                    .map(
+                                      (i) => IncomeExpenseRowMobile(
+                                        text: i.name,
+                                        amount: double.tryParse(i.amount) ?? 0,
+                                        isExpense: false,
+                                      ),
+                                    )
+                                    .toList(),
+                            onViewAll:
+                                () => _showAllBottomSheet(
+                                  context,
+                                  "All Incomes",
+                                  vm.incomes
+                                      .map(
+                                        (i) => IncomeExpenseRowMobile(
+                                          text: i.name,
+                                          amount:
+                                              double.tryParse(i.amount) ?? 0,
+                                          isExpense: false,
+                                        ),
+                                      )
+                                      .toList(),
+                                ),
                           ),
                         ),
                       ],
                     ),
+
+                    const SizedBox(height: 32),
+
+                    /// ==== Category Expense + Pie Chart ====
+                    _buildCategoryChart(vm, context),
                   ],
                 ),
+      ),
+    );
+  }
+
+  /// ==== Modern Card Section with "View All" BELOW ====
+  Widget _buildCardSection({
+    required BuildContext context,
+    required String title,
+    required IconData icon,
+    required Color iconColor,
+    required List<Widget> items,
+    required VoidCallback onViewAll,
+  }) {
+    return Container(
+      height: 220, // 🔥 Equal height for both Expense & Income cards
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.15),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          /// Title + Icon
+          Row(
+            children: [
+              Icon(icon, color: iconColor, size: 20),
+              const SizedBox(width: 8),
+              Poppins(
+                text: title,
+                size: 16.0,
+                color: Colors.grey.shade900,
+                fontWeight: FontWeight.bold,
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 6),
+
+          /// View All (below, right aligned)
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: onViewAll,
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: const Size(50, 30),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: const Text(
+                "View All",
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.indigo,
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 8),
+
+          /// Show only first 3 items
+          Expanded(
+            child:
+                items.isNotEmpty
+                    ? ListView(
+                      physics: const NeverScrollableScrollPhysics(),
+                      children: items.take(3).toList(),
+                    )
+                    : Center(
+                      child: Poppins(
+                        text: "No records found",
+                        size: 14.0,
+                        color: Colors.grey,
+                      ),
+                    ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// ==== Bottom Sheet for "View All" ====
+  void _showAllBottomSheet(
+    BuildContext context,
+    String title,
+    List<Widget> items,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) {
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.7,
+          minChildSize: 0.4,
+          maxChildSize: 0.95,
+          builder: (context, scrollController) {
+            return Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  /// Header
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Poppins(
+                        text: title,
+                        size: 18.0,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                  const Divider(),
+
+                  /// Full List
+                  Expanded(
+                    child: ListView.builder(
+                      controller: scrollController,
+                      itemCount: items.length,
+                      itemBuilder: (context, index) => items[index],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  /// ==== Category Chart Section ====
+  Widget _buildCategoryChart(ViewModel vm, BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.15),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.category, color: Colors.indigo, size: 20),
+              const SizedBox(width: 8),
+              Poppins(
+                text: "Expense by Category",
+                size: 16.0,
+                color: Colors.grey.shade900,
+                fontWeight: FontWeight.bold,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ...vm.expenseTotalsByCategory.entries.map(
+            (entry) => ListTile(
+              dense: true,
+              contentPadding: EdgeInsets.zero,
+              title: Poppins(
+                text: entry.key,
+                size: 15.0,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey.shade800,
+              ),
+              trailing: Poppins(
+                text: "${entry.value}\$",
+                size: 15.0,
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          Center(
+            child: SizedBox(
+              height: 220,
+              child: PieChart(
+                PieChartData(
+                  sections:
+                      vm.expenseTotalsByCategory.entries.map((entry) {
+                        return PieChartSectionData(
+                          value: entry.value.toDouble(),
+                          title: '',
+                          color: getColorForCategory(entry.key),
+                          radius: 65,
+                        );
+                      }).toList(),
+                  centerSpaceRadius: 40,
+                  sectionsSpace: 3,
+                ),
+                swapAnimationDuration: const Duration(milliseconds: 700),
+                swapAnimationCurve: Curves.easeOutQuint,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
