@@ -57,6 +57,6 @@ It integrates with **Firebase Authentication & Firestore** for secure login and 
 
 1. Clone the repo
    ```sh
-   git clone https://github.com/Muskanpoddar/budget_App.git
+   git clone https://github.com/Muskanpoddar/Expensio.git
    cd expensio
    ```
