@@ -1,5 +1,4 @@
-import 'package:Budget_App/Theme/theme_provider.dart';
-
+import 'package:Budget_App/navBar/nav_bar_handler.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -9,7 +8,6 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:url_strategy/url_strategy.dart';
 
 import 'firebase_options.dart';
-import 'responsive_handler.dart';
 // 👈 add this import
 
 void main() async {
@@ -31,14 +29,12 @@ class MyApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final themeMode = ref.watch(themeModeProvider); // 👈 read from Riverpod
+    // 👈 read from Riverpod
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      themeMode: themeMode,
-      theme: lightTheme, // 👈 from theme_provider.dart
-      darkTheme: darkTheme, // 👈 from theme_provider.dart
-      home: ResponsiveHandler(),
+
+      home: const BottomNavHandler(),
     );
   }
 }
