@@ -15,12 +15,17 @@ final viewModel = ChangeNotifierProvider.autoDispose<ViewModel>(
 final authStateProvider = StreamProvider<User?>(
   (ref) => ref.read(viewModel).authStateChange,
 );
+final _auth = FirebaseAuth.instance;
+CollectionReference userCollection = FirebaseFirestore.instance.collection(
+  'users',
+);
 
 /// ViewModel
 class ViewModel extends ChangeNotifier {
   /// Firebase & Google
   final _auth = FirebaseAuth.instance;
   final GoogleSignIn _google = GoogleSignIn.instance;
+
   final notificationsProvider = StateProvider<bool>((ref) => true);
   bool _notificationsEnabled = true;
   bool get notificationsEnabled => _notificationsEnabled;
@@ -154,6 +159,9 @@ class ViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  // budget//
+  List<BudgetModel> budgets = [];
+
   /// ==================== CALCULATIONS ====================
 
   void calculate() {
@@ -196,85 +204,82 @@ class ViewModel extends ChangeNotifier {
   Future<void> createUserWithEmailAndPassword(
     BuildContext context,
     String email,
-    String password,
-  ) async {
-    await _auth
-        .createUserWithEmailAndPassword(email: email, password: password)
-        .then((value) => logger.d("Login successful"))
-        .onError((error, stackTrace) {
-          logger.d(error);
-          DialogBox(
-            context,
-            error.toString().replaceAll(RegExp('\\[.*?\\]'), ''),
-          );
-        });
+    String password, {
+    VoidCallback? onSuccess,
+  }) async {
+    // ✅ Validation first
+    if (email.isEmpty || password.isEmpty) {
+      DialogBox(context, "Please enter both email and password");
+      return;
+    }
+    if (password.length < 6) {
+      DialogBox(context, "Password must be at least 6 characters");
+      return;
+    }
+
+    try {
+      await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      logger.d("Registration successful");
+      if (onSuccess != null) onSuccess();
+    } on FirebaseAuthException catch (e) {
+      DialogBox(context, e.message ?? "Registration failed");
+    }
   }
 
-  /// Email login
   Future<void> signInWithEmailAndPassword(
     BuildContext context,
     String email,
-    String password,
-  ) async {
-    await _auth
-        .signInWithEmailAndPassword(email: email, password: password)
-        .then((value) => logger.d("Login successful"))
-        .onError((error, stackTrace) {
-          logger.d(error);
-          DialogBox(
-            context,
-            error.toString().replaceAll(RegExp('\\[.*?\\]'), ''),
-          );
-        });
-  }
+    String password, {
+    VoidCallback? onSuccess,
+  }) async {
+    if (email.isEmpty || password.isEmpty) {
+      DialogBox(context, "Please enter both email and password");
+      return;
+    }
 
-  /// Google sign-in (Web)
-  Future<void> signInWithGoogleWeb(BuildContext context) async {
-    final googleProvider = GoogleAuthProvider();
-    await _auth
-        .signInWithPopup(googleProvider)
-        .then((_) {
-          logger.d(
-            'Current user UID present? ${_auth.currentUser?.uid.isNotEmpty ?? false}',
-          );
-        })
-        .onError((error, stackTrace) {
-          logger.d(error);
-          return DialogBox(
-            context,
-            error.toString().replaceAll(RegExp(r'\[.*?\]'), ''),
-          );
-        });
+    try {
+      await _auth.signInWithEmailAndPassword(email: email, password: password);
+
+      logger.d("Signed in successfully");
+      if (onSuccess != null) onSuccess();
+    } on FirebaseAuthException catch (e) {
+      if (e.code == "user-not-found") {
+        DialogBox(context, "No account found. Please register first.");
+      } else if (e.code == "wrong-password") {
+        DialogBox(context, "Incorrect password. Try again.");
+      } else {
+        DialogBox(context, e.message ?? "Login failed");
+      }
+    }
   }
 
   /// Google sign-in (Mobile)
-  Future<void> signInWithGoogleMobile(BuildContext context) async {
-    final GoogleSignInAccount account = await _google
-        .authenticate(scopeHint: const ['email'])
-        .onError((error, stackTrace) {
-          logger.d(error);
-          DialogBox(
-            context,
-            error.toString().replaceAll(RegExp(r'\[.*?\]'), ''),
-          );
-          throw error!;
-        });
+  Future<void> signInWithGoogleMobile(
+    BuildContext context, {
+    VoidCallback? onSuccess,
+  }) async {
+    try {
+      final account = await _google.authenticate(scopeHint: const ['email']);
+      final idToken = account.authentication.idToken;
 
-    final String? idToken = account.authentication.idToken;
-    final credential = GoogleAuthProvider.credential(idToken: idToken);
+      if (idToken == null) {
+        throw FirebaseAuthException(
+          code: 'NO_ID_TOKEN',
+          message: 'Failed to retrieve Google ID token.',
+        );
+      }
 
-    await _auth
-        .signInWithCredential(credential)
-        .then((value) {
-          logger.e('Signed in successfully $value');
-        })
-        .onError((error, stackTrace) {
-          logger.d(error);
-          DialogBox(
-            context,
-            error.toString().replaceAll(RegExp(r'\[.*?\]'), ''),
-          );
-        });
+      final credential = GoogleAuthProvider.credential(idToken: idToken);
+      final userCredential = await _auth.signInWithCredential(credential);
+      logger.d('Signed in successfully: $userCredential');
+      if (onSuccess != null) onSuccess();
+    } catch (error) {
+      logger.d(error);
+      DialogBox(context, error.toString().replaceAll(RegExp(r'\[.*?\]'), ''));
+    }
   }
 
   /// Add expense
@@ -282,15 +287,6 @@ class ViewModel extends ChangeNotifier {
     final formKey = GlobalKey<FormState>();
     final controllerName = TextEditingController();
     final controllerAmount = TextEditingController();
-
-    await userCollection.doc(_auth.currentUser!.uid).collection("expenses").add(
-      {
-        "name": controllerName.text,
-        "amount": controllerAmount.text,
-        "category": selectedExpenseCategory,
-        "date": DateTime.now().toIso8601String(), // 👈 NEW
-      },
-    );
 
     return await showDialog(
       context: context,
@@ -372,18 +368,33 @@ class ViewModel extends ChangeNotifier {
                     ),
                     onPressed: () async {
                       if (formKey.currentState!.validate()) {
+                        final int amount =
+                            int.tryParse(controllerAmount.text.trim()) ?? 0;
+
+                        // Add expense to Firestore
                         await userCollection
                             .doc(_auth.currentUser!.uid)
                             .collection("expenses")
                             .add({
-                              "name": controllerName.text,
-                              "amount": controllerAmount.text,
+                              "name": controllerName.text.trim(),
+                              "amount": controllerAmount.text.trim(),
                               "category": selectedExpenseCategory,
+                              "date": DateTime.now().toIso8601String(),
+                            })
+                            .then((value) {
+                              logger.d("Expense added");
                             })
                             .onError((error, stackTrace) {
                               logger.d("add expense error = $error");
                               return DialogBox(context, error.toString());
                             });
+
+                        // ✅ Update budget spent for this category
+                        await incrementBudgetSpent(
+                          selectedExpenseCategory,
+                          amount,
+                        );
+
                         Navigator.pop(context);
                       }
                     },
@@ -400,13 +411,6 @@ class ViewModel extends ChangeNotifier {
     final formKey = GlobalKey<FormState>();
     final controllerName = TextEditingController();
     final controllerAmount = TextEditingController();
-
-    await userCollection.doc(_auth.currentUser!.uid).collection("incomes").add({
-      "name": controllerName.text,
-      "amount": controllerAmount.text,
-      "category": selectedIncomeCategory,
-      "date": DateTime.now().toIso8601String(), // 👈 NEW
-    });
 
     return await showDialog(
       context: context,
@@ -492,9 +496,10 @@ class ViewModel extends ChangeNotifier {
                             .doc(_auth.currentUser!.uid)
                             .collection("incomes")
                             .add({
-                              "name": controllerName.text,
-                              "amount": controllerAmount.text,
+                              "name": controllerName.text.trim(),
+                              "amount": controllerAmount.text.trim(),
                               "category": selectedIncomeCategory,
+                              "date": DateTime.now().toIso8601String(),
                             })
                             .then((value) {
                               logger.d("Income added");
@@ -673,6 +678,126 @@ class ViewModel extends ChangeNotifier {
     } catch (e) {
       logger.e("Restore error: $e");
       DialogBox(context, "❌ Restore failed: $e");
+    }
+  }
+
+  /// For charts – cleaner alias
+  Map<String, double> get expensesByCategory {
+    return expenseTotalsByCategory.map(
+      (key, value) => MapEntry(key, value.toDouble()),
+    );
+  }
+
+  Map<String, double> get incomesByCategory {
+    return incomeTotalsByCategory.map(
+      (key, value) => MapEntry(key, value.toDouble()),
+    );
+  }
+}
+
+/// ==================== BUDGETS ====================
+
+/// ==================== BUDGETS ====================
+
+class BudgetModel {
+  final String id;
+  final String name;
+  final int limit;
+  final int spent;
+  final String priority;
+  final String frequency;
+  final String notes;
+
+  BudgetModel({
+    required this.id,
+    required this.name,
+    required this.limit,
+    required this.spent,
+    required this.priority,
+    required this.frequency,
+    required this.notes,
+  });
+
+  factory BudgetModel.fromJson(String id, Map<String, dynamic> json) {
+    return BudgetModel(
+      id: id,
+      name: json['name'] ?? '',
+      limit: json['limit'] ?? 0,
+      spent: json['spent'] ?? 0,
+      priority: json['priority'] ?? 'Optional',
+      frequency: json['frequency'] ?? 'Monthly',
+      notes: json['notes'] ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      "name": name,
+      "limit": limit,
+      "spent": spent,
+      "priority": priority,
+      "frequency": frequency,
+      "notes": notes,
+    };
+  }
+}
+
+/// ==================== BUDGET FUNCTIONS IN VIEWMODEL ====================
+
+extension BudgetFunctions on ViewModel {
+  Stream<List<BudgetModel>> budgetsStream() {
+    final uid = _auth.currentUser!.uid;
+    return userCollection
+        .doc(uid)
+        .collection("budgets")
+        .snapshots()
+        .map(
+          (snapshot) =>
+              snapshot.docs
+                  .map((doc) => BudgetModel.fromJson(doc.id, doc.data()))
+                  .toList(),
+        );
+  }
+
+  Future<void> addBudget(BudgetModel budget) async {
+    final uid = _auth.currentUser!.uid;
+    await userCollection.doc(uid).collection("budgets").add(budget.toJson());
+  }
+
+  Future<void> updateBudget(String docId, BudgetModel budget) async {
+    final uid = _auth.currentUser!.uid;
+    await userCollection
+        .doc(uid)
+        .collection("budgets")
+        .doc(docId)
+        .update(budget.toJson());
+  }
+
+  Future<void> deleteBudget(String docId) async {
+    final uid = _auth.currentUser!.uid;
+    await userCollection.doc(uid).collection("budgets").doc(docId).delete();
+  }
+
+  Future<void> incrementBudgetSpent(String category, int amount) async {
+    final uid = _auth.currentUser!.uid;
+    final query =
+        await userCollection
+            .doc(uid)
+            .collection("budgets")
+            .where("name", isEqualTo: category)
+            .get();
+
+    for (var doc in query.docs) {
+      final currentSpent = doc.data()['spent'] ?? 0;
+      await doc.reference.update({"spent": currentSpent + amount});
+    }
+  }
+
+  Future<void> resetBudgets() async {
+    final uid = _auth.currentUser!.uid;
+    final snapshot = await userCollection.doc(uid).collection("budgets").get();
+    for (var doc in snapshot.docs) {
+      await doc.reference.delete();
     }
   }
 }
