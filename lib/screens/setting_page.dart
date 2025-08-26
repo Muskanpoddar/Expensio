@@ -1,9 +1,6 @@
-import 'package:Budget_App/Theme/theme_provider.dart';
 import 'package:Budget_App/screens/edit_profile_page.dart';
 import 'package:Budget_App/screens/login_page.dart';
-
 import 'package:Budget_App/screens/privacy_page.dart';
-
 import 'package:Budget_App/view_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -15,8 +12,6 @@ class SettingsPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = ref.watch(themeProvider);
-
     /// For Notifications
 
     final notificationsEnabled = ref.watch(viewModel);
@@ -72,17 +67,6 @@ class SettingsPage extends ConsumerWidget {
           ),
           const SizedBox(height: 10),
 
-          _settingsTile(
-            icon: Icons.dark_mode,
-            title: "Dark Mode",
-            subtitle: "Switch between light and dark theme",
-            trailing: Switch(
-              value: isDark,
-              onChanged: (val) {
-                ref.read(themeProvider.notifier).state = val;
-              },
-            ),
-          ),
           _settingsTile(
             icon: Icons.notifications,
             title: "Notifications",
