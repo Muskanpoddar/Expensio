@@ -1,4 +1,5 @@
-import 'package:flutter/foundation.dart';
+import 'package:Budget_App/mobile/expense_view_mobile.dart';
+import 'package:Budget_App/mobile/login_view_mobile.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:sign_button/sign_button.dart';
@@ -10,12 +11,14 @@ class RegisterButton extends HookConsumerWidget {
   final ViewModel viewModelProvider;
   final TextEditingController emailField;
   final TextEditingController passwordField;
+  final VoidCallback? onRegisterSuccess;
 
   const RegisterButton({
     super.key,
     required this.viewModelProvider,
     required this.emailField,
     required this.passwordField,
+    this.onRegisterSuccess,
   });
 
   @override
@@ -29,6 +32,7 @@ class RegisterButton extends HookConsumerWidget {
             context,
             emailField.text,
             passwordField.text,
+            onSuccess: onRegisterSuccess,
           );
         },
         child: OpenSans(text: "Register", size: 20.0, color: Colors.white),
@@ -46,12 +50,14 @@ class LoginButton extends HookConsumerWidget {
   final ViewModel viewModelProvider;
   final TextEditingController emailField;
   final TextEditingController passwordField;
+  final VoidCallback? onLoginSuccess;
 
   const LoginButton({
     super.key,
     required this.viewModelProvider,
     required this.emailField,
     required this.passwordField,
+    this.onLoginSuccess,
   });
 
   @override
@@ -71,6 +77,7 @@ class LoginButton extends HookConsumerWidget {
             context,
             emailField.text,
             passwordField.text,
+            onSuccess: onLoginSuccess,
           );
         },
       ),
@@ -78,25 +85,59 @@ class LoginButton extends HookConsumerWidget {
   }
 }
 
-class SignInbutton extends StatelessWidget {
+class SignInbutton extends HookConsumerWidget {
   final ViewModel viewModelProvider;
+  final VoidCallback? onLoginSuccess;
 
-  const SignInbutton({super.key, required this.viewModelProvider});
+  const SignInbutton({
+    super.key,
+    required this.viewModelProvider,
+    this.onLoginSuccess,
+  });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return SignInButton(
       buttonType: ButtonType.google,
       btnColor: Colors.black,
       btnTextColor: Colors.white,
       buttonSize: ButtonSize.medium,
       onPressed: () async {
-        if (kIsWeb) {
-          await viewModelProvider.signInWithGoogleWeb(context);
-        } else {
-          await viewModelProvider.signInWithGoogleMobile(context);
+        try {
+          await viewModelProvider.signInWithGoogleMobile(
+            context,
+            onSuccess: onLoginSuccess,
+          );
+        } catch (e) {
+          // Optional: show dialog on failure
+          DialogBox(context, "Google Sign-In failed: $e");
         }
       },
     );
+  }
+}
+
+/// Wrapper to handle navigation after successful login/registration
+class AuthWrapper extends StatefulWidget {
+  @override
+  _AuthWrapperState createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends State<AuthWrapper> {
+  bool _isLoggedIn = false;
+
+  void _onLoginSuccess() {
+    setState(() {
+      _isLoggedIn = true;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoggedIn) {
+      return ExpenseViewMobile();
+    } else {
+      return LoginViewMobile(onLoginSuccess: _onLoginSuccess);
+    }
   }
 }
