@@ -3,8 +3,6 @@
 Expensio is a **Flutter-based mobile app** that helps you track expenses, set budgets, and visualize your spending habits.  
 It integrates with **Firebase Authentication & Firestore** for secure login and real-time data syncing.
 
----
-
 ## ✨ Features
 
 - 🔐 **User Authentication**
@@ -42,14 +40,11 @@ It integrates with **Firebase Authentication & Firestore** for secure login and 
 
 ---
 
----
-
 ## 🚀 Tech Stack
 
 - **Frontend:** Flutter (Dart)
 - **State Management:** Riverpod + Flutter Hooks
 - **Backend:** Firebase (Auth, Firestore, App Distribution)
-- **UI/UX:** Material Design + Google Fonts
 
 ---
 
