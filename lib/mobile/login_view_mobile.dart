@@ -1,25 +1,26 @@
 import 'package:Budget_App/pages/button.dart';
 import 'package:Budget_App/pages/text_form.dart';
 import 'package:Budget_App/view_model.dart';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class LoginViewMobile extends HookConsumerWidget {
+  final VoidCallback? onLoginSuccess;
+
+  const LoginViewMobile({Key? key, this.onLoginSuccess}) : super(key: key);
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final TextEditingController _emailField = useTextEditingController();
     final TextEditingController _passwordField = useTextEditingController();
 
-    // ✅ Use the provider correctly
-    final vm = ref.watch(viewModel);
-
+    final vm = ref.watch(viewModel); // your ViewModel provider
     final double deviceHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F6FF), // Soft background
+      backgroundColor: const Color(0xFFF8F6FF),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -47,15 +48,16 @@ class LoginViewMobile extends HookConsumerWidget {
                 // Password Field
                 TextFormPassword(
                   passwordField: _passwordField,
-                  viewModelProvider: vm, // ✅ Pass vm
+                  viewModelProvider: vm,
                 ),
                 const SizedBox(height: 30.0),
 
                 // Register Button
                 RegisterButton(
-                  viewModelProvider: vm, // ✅ Pass vm
+                  viewModelProvider: vm,
                   emailField: _emailField,
                   passwordField: _passwordField,
+                  onRegisterSuccess: onLoginSuccess,
                 ),
                 const SizedBox(height: 20.0),
 
@@ -71,14 +73,18 @@ class LoginViewMobile extends HookConsumerWidget {
 
                 // Login Button
                 LoginButton(
-                  viewModelProvider: vm, // ✅ Pass vm
+                  viewModelProvider: vm,
                   emailField: _emailField,
                   passwordField: _passwordField,
+                  onLoginSuccess: onLoginSuccess,
                 ),
                 const SizedBox(height: 30.0),
 
                 // Google Sign-In Button
-                SignInbutton(viewModelProvider: vm), // ✅ Pass vm
+                SignInbutton(
+                  viewModelProvider: vm,
+                  onLoginSuccess: onLoginSuccess,
+                ),
                 const SizedBox(height: 40.0),
               ],
             ),
